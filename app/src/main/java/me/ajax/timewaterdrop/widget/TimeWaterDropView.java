@@ -11,6 +11,8 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Shader;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -98,6 +100,7 @@ public class TimeWaterDropView extends View {
 
     void init() {
 
+        setLayerType(View.LAYER_TYPE_SOFTWARE, null);//关闭硬件加速
 
         //波浪路径
         for (int i = 0; i < wavePath.length; i++) {
@@ -295,7 +298,7 @@ public class TimeWaterDropView extends View {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 waterDropAnimationValue = (int) animation.getAnimatedValue();
-                invalidate();
+                invalidateView();
             }
         });
 
@@ -308,7 +311,7 @@ public class TimeWaterDropView extends View {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 waveAnimationValue1 = (int) animation.getAnimatedValue();
-                invalidate();
+                invalidateView();
             }
         });
 
@@ -341,5 +344,35 @@ public class TimeWaterDropView extends View {
 
     void l(Object o) {
         Log.e("######", o.toString());
+    }
+
+
+    private void invalidateView() {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            //  当前线程是主UI线程，直接刷新。
+            invalidate();
+        } else {
+            //  当前线程是非UI线程，post刷新。
+            postInvalidate();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        stopAnimAndRemoveCallbacks();
+    }
+
+    private void stopAnimAndRemoveCallbacks() {
+
+        if (waterDropAnimator != null) waterDropAnimator.end();
+        if (waveAnimator1 != null) waveAnimator1.end();
+        if (waveAnimator2 != null) waveAnimator2.end();
+        if (waveAnimator3 != null) waveAnimator3.end();
+
+        Handler handler = this.getHandler();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
     }
 }
